@@ -109,9 +109,7 @@ function renderProducts() {
 
   if (searchQuery.trim()) {
     const q = normalize(searchQuery);
-    filtered = filtered.filter((p) =>
-      normalize(p.name).includes(q) || (p.code && p.code.includes(q))
-    );
+    filtered = filtered.filter((p) => normalize(p.name).includes(q));
   }
 
   if (filtered.length === 0) {
@@ -128,12 +126,11 @@ function renderProducts() {
     const cat = categories.find((c) => c.id === p.categoryId);
     const catName = cat ? escHtml(cat.name) : 'Sin categoría';
     const price = parseFloat(p.price || 0).toFixed(2);
-    const codeStr = p.code ? `<span class="product-code-badge">#${escHtml(p.code)}</span>` : '';
     html += `
       <div class="product-card" data-id="${p.id}">
         <div class="product-info">
           <div class="product-name">${escHtml(p.name)}</div>
-          <span class="product-category-badge">${catName}</span> ${codeStr}
+          <span class="product-category-badge">${catName}</span>
         </div>
         <div class="product-price">$${price}</div>
       </div>`;
@@ -205,7 +202,6 @@ function openProductModal(id) {
     document.getElementById('product-name').value = product.name || '';
     document.getElementById('product-price').value = product.price || '';
     document.getElementById('product-category').value = product.categoryId || '';
-    document.getElementById('product-code').value = product.code || '';
     deleteBtn.classList.remove('hidden');
   } else {
     title.textContent = 'Agregar Producto';
@@ -247,7 +243,6 @@ async function saveProduct(e) {
   const name = document.getElementById('product-name').value.trim();
   const price = parseFloat(document.getElementById('product-price').value);
   const categoryId = document.getElementById('product-category').value;
-  const code = document.getElementById('product-code').value.trim();
 
   if (!name || isNaN(price) || !categoryId) {
     showToast('Completa todos los campos', 'error');
@@ -260,8 +255,6 @@ async function saveProduct(e) {
     categoryId,
     updatedAt: firebase.firestore.FieldValue.serverTimestamp()
   };
-
-  if (code) data.code = code;
 
   try {
     if (id) {
@@ -433,110 +426,7 @@ document.getElementById('category-modal-overlay').addEventListener('click', (e) 
 document.getElementById('category-form').addEventListener('submit', saveCategory);
 document.getElementById('btn-delete-category').addEventListener('click', deleteCategory);
 
-// Scanner
-let scanning = false;
-
-function initScanner() {
-  if (typeof Quagga === 'undefined') {
-    document.getElementById('fab-scan').classList.add('hidden');
-    document.getElementById('btn-scan-form').classList.add('hidden');
-    return;
-  }
-
-  document.getElementById('fab-scan').addEventListener('click', startScanner);
-  document.getElementById('btn-scan-form').addEventListener('click', startScanner);
-  document.getElementById('scanner-close').addEventListener('click', stopScanner);
-}
-
-function startScanner() {
-  if (scanning) return;
-  scanning = true;
-
-  const overlay = document.getElementById('scanner-overlay');
-  overlay.classList.remove('hidden');
-
-  const view = document.getElementById('scanner-view');
-  view.innerHTML = '';
-
-  Quagga.init({
-    inputStream: {
-      name: 'Live',
-      type: 'LiveStream',
-      target: view,
-      constraints: {
-        width: 640,
-        height: 480,
-        facingMode: 'environment'
-      },
-      area: { top: '0%', right: '0%', left: '0%', bottom: '0%' }
-    },
-    decoder: {
-      readers: [
-        'ean_reader', 'ean_8_reader', 'upc_reader',
-        'upc_e_reader', 'code_128_reader'
-      ],
-      debug: {
-        drawBoundingBox: false,
-        showPattern: false,
-        showCanvas: false
-      }
-    },
-    locate: false,
-    numOfWorkers: 0,
-    frequency: 10
-  }, (err) => {
-    if (err) {
-      if (err.toString().includes('NotAllowedError') || err.toString().includes('Permission')) {
-        view.innerHTML = '<div style="color:#fff;padding:40px;text-align:center"><p style="font-size:2rem;margin-bottom:16px">&#128248;</p><p style="font-size:1rem">Permiso de cámara denegado</p><p style="font-size:0.85rem;margin-top:8px;color:#aaa">Ve a Ajustes > Safari > Cámara y permite el acceso</p></div>';
-      } else {
-        showToast('Error al iniciar cámara', 'error');
-        stopScanner();
-      }
-      return;
-    }
-    Quagga.start();
-
-    const line = document.createElement('div');
-    line.className = 'scanner-line';
-    view.appendChild(line);
-    const hint = document.querySelector('.scanner-hint');
-    if (hint) hint.textContent = 'Escaneando... acerca el código de barras';
-  });
-
-  Quagga.onDetected((data) => {
-    const code = data.codeResult.code;
-    const confidence = data.codeResult.confidence || 0;
-    if (!code || confidence < 0.7) return;
-
-    scanning = false;
-    Quagga.stop();
-    overlay.classList.add('hidden');
-
-    document.getElementById('product-code').value = code;
-    const existing = products.find((p) => p.code === code);
-    if (existing) {
-      showToast('Código ya registrado: ' + existing.name, 'warning');
-      openProductModal(existing.id);
-    } else {
-      openProductModal(null);
-      showToast('Código: ' + code, 'success');
-    }
-  });
-}
-
-function stopScanner() {
-  scanning = false;
-  try { Quagga.stop(); } catch {}
-  document.getElementById('scanner-view').innerHTML = '';
-  document.getElementById('scanner-overlay').classList.add('hidden');
-}
-
-document.getElementById('scanner-overlay').addEventListener('click', (e) => {
-  if (e.target === e.currentTarget) stopScanner();
-});
-
 // Init
 document.addEventListener('DOMContentLoaded', () => {
   initApp();
-  initScanner();
 });

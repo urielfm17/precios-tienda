@@ -53,11 +53,8 @@
         </div>
       </div>
 
-      <!-- FABs -->
-      <div class="fab-group">
-        <button id="fab-scan" class="fab fab-scan">&#128247;</button>
-        <button id="fab-add" class="fab fab-add">+</button>
-      </div>
+      <!-- FAB -->
+      <button id="fab-add" class="fab">+</button>
     </section>
 
     <!-- Categories View -->
@@ -87,13 +84,6 @@
         <div class="form-group">
           <label for="product-name">Nombre del producto</label>
           <input type="text" id="product-name" required placeholder="Ej: Leche Entera">
-        </div>
-        <div class="form-group">
-          <label for="product-code">Código de barras</label>
-          <div class="input-with-btn">
-            <input type="text" id="product-code" placeholder="Escanear o escribir código" autocomplete="off">
-            <button type="button" id="btn-scan-form" class="btn-scan" title="Escanear código">&#128247;</button>
-          </div>
         </div>
         <div class="form-group">
           <label for="product-price">Precio ($)</label>
@@ -140,17 +130,6 @@
     </div>
   </div>
 
-  <!-- Scanner Overlay -->
-  <div id="scanner-overlay" class="scanner-overlay hidden">
-    <div class="scanner-header">
-      <span class="scanner-title">Escanear código</span>
-      <button type="button" id="scanner-close" class="btn-icon scanner-close">&#10005;</button>
-    </div>
-    <div id="scanner-view" class="scanner-view"></div>
-    <p class="scanner-hint">Apunta al código de barras del producto</p>
-  </div>
-
-  <script src="https://cdn.jsdelivr.net/npm/quagga/dist/quagga.min.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
   <script src="firebase-config.js?v=2"></script>

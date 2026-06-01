@@ -464,22 +464,20 @@ function startScanner() {
       type: 'LiveStream',
       target: view,
       constraints: {
-        width: { min: 640 },
-        height: { min: 480 },
-        facingMode: 'environment',
-        aspectRatio: { min: 1, max: 2 }
+        width: 640,
+        height: 480,
+        facingMode: 'environment'
       }
     },
     locator: {
-      patchSize: 'medium',
+      patchSize: 'x-large',
       halfSample: true
     },
-    numOfWorkers: navigator.hardwareConcurrency || 2,
+    numOfWorkers: 0,
     decoder: {
       readers: [
         'ean_reader', 'ean_8_reader', 'upc_reader',
-        'upc_e_reader', 'code_128_reader', 'code_39_reader',
-        'code_93_reader', 'i2of5_reader'
+        'upc_e_reader', 'code_128_reader', 'code_39_reader'
       ]
     },
     locate: true

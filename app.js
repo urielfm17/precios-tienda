@@ -108,8 +108,8 @@ function renderProducts() {
   }
 
   if (searchQuery.trim()) {
-    const q = searchQuery.toLowerCase().trim();
-    filtered = filtered.filter((p) => p.name.toLowerCase().includes(q));
+    const q = normalize(searchQuery);
+    filtered = filtered.filter((p) => normalize(p.name).includes(q));
   }
 
   if (filtered.length === 0) {
@@ -368,6 +368,10 @@ function showToast(message, type) {
     toast.style.transition = 'opacity 0.3s';
     setTimeout(() => toast.remove(), 300);
   }, 2500);
+}
+
+function normalize(str) {
+  return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
 }
 
 function escHtml(str) {

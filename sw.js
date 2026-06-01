@@ -8,7 +8,8 @@ const STATIC_ASSETS = [
   BASE + '/styles.css',
   BASE + '/app.js',
   BASE + '/firebase-config.js',
-  BASE + '/manifest.json'
+  BASE + '/manifest.json',
+  'https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js'
 ];
 
 self.addEventListener('install', (event) => {

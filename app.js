@@ -109,7 +109,9 @@ function renderProducts() {
 
   if (searchQuery.trim()) {
     const q = normalize(searchQuery);
-    filtered = filtered.filter((p) => normalize(p.name).includes(q));
+    filtered = filtered.filter((p) =>
+      normalize(p.name).includes(q) || (p.code && p.code.includes(q))
+    );
   }
 
   if (filtered.length === 0) {
@@ -126,11 +128,12 @@ function renderProducts() {
     const cat = categories.find((c) => c.id === p.categoryId);
     const catName = cat ? escHtml(cat.name) : 'Sin categoría';
     const price = parseFloat(p.price || 0).toFixed(2);
+    const codeStr = p.code ? `<span class="product-code-badge">#${escHtml(p.code)}</span>` : '';
     html += `
       <div class="product-card" data-id="${p.id}">
         <div class="product-info">
           <div class="product-name">${escHtml(p.name)}</div>
-          <span class="product-category-badge">${catName}</span>
+          <span class="product-category-badge">${catName}</span> ${codeStr}
         </div>
         <div class="product-price">$${price}</div>
       </div>`;
@@ -202,6 +205,7 @@ function openProductModal(id) {
     document.getElementById('product-name').value = product.name || '';
     document.getElementById('product-price').value = product.price || '';
     document.getElementById('product-category').value = product.categoryId || '';
+    document.getElementById('product-code').value = product.code || '';
     deleteBtn.classList.remove('hidden');
   } else {
     title.textContent = 'Agregar Producto';
@@ -243,6 +247,7 @@ async function saveProduct(e) {
   const name = document.getElementById('product-name').value.trim();
   const price = parseFloat(document.getElementById('product-price').value);
   const categoryId = document.getElementById('product-category').value;
+  const code = document.getElementById('product-code').value.trim();
 
   if (!name || isNaN(price) || !categoryId) {
     showToast('Completa todos los campos', 'error');
@@ -255,6 +260,8 @@ async function saveProduct(e) {
     categoryId,
     updatedAt: firebase.firestore.FieldValue.serverTimestamp()
   };
+
+  if (code) data.code = code;
 
   try {
     if (id) {
@@ -426,5 +433,78 @@ document.getElementById('category-modal-overlay').addEventListener('click', (e) 
 document.getElementById('category-form').addEventListener('submit', saveCategory);
 document.getElementById('btn-delete-category').addEventListener('click', deleteCategory);
 
+// Scanner
+let html5Scanner = null;
+
+function initScanner() {
+  if (!('Html5Qrcode' in window)) return;
+
+  document.getElementById('fab-scan').addEventListener('click', startScanner);
+  document.getElementById('btn-scan-form').addEventListener('click', startScanner);
+  document.getElementById('scanner-close').addEventListener('click', stopScanner);
+}
+
+function startScanner() {
+  const overlay = document.getElementById('scanner-overlay');
+  overlay.classList.remove('hidden');
+
+  const view = document.getElementById('scanner-view');
+  view.innerHTML = '';
+
+  try {
+    html5Scanner = new Html5Qrcode('scanner-view');
+
+    html5Scanner.start(
+      { facingMode: 'environment' },
+      {
+        fps: 10,
+        qrbox: { width: 280, height: 120 },
+        formatsToSupport: [
+          Html5QrcodeSupportedFormats.EAN_13,
+          Html5QrcodeSupportedFormats.EAN_8,
+          Html5QrcodeSupportedFormats.UPC_A,
+          Html5QrcodeSupportedFormats.UPC_E,
+          Html5QrcodeSupportedFormats.CODE_128,
+          Html5QrcodeSupportedFormats.CODE_39,
+          Html5QrcodeSupportedFormats.CODE_93,
+          Html5QrcodeSupportedFormats.ITF,
+          Html5QrcodeSupportedFormats.QR_CODE
+        ]
+      },
+      onScanSuccess,
+      () => {}
+    );
+  } catch (err) {
+    showToast('Error al iniciar la cámara', 'error');
+    stopScanner();
+  }
+}
+
+function onScanSuccess(decodedText) {
+  stopScanner();
+  document.getElementById('product-code').value = decodedText;
+  openProductModal(null);
+  showToast('Código detectado: ' + decodedText, 'success');
+}
+
+function stopScanner() {
+  if (html5Scanner) {
+    try {
+      html5Scanner.stop();
+      html5Scanner.clear();
+    } catch {}
+    html5Scanner = null;
+  }
+  document.getElementById('scanner-view').innerHTML = '';
+  document.getElementById('scanner-overlay').classList.add('hidden');
+}
+
+document.getElementById('scanner-overlay').addEventListener('click', (e) => {
+  if (e.target === e.currentTarget) stopScanner();
+});
+
 // Init
-document.addEventListener('DOMContentLoaded', initApp);
+document.addEventListener('DOMContentLoaded', () => {
+  initApp();
+  initScanner();
+});

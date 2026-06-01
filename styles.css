@@ -301,24 +301,30 @@ html, body {
   margin-top: 8px;
 }
 
-/* FAB */
-.fab {
+/* FAB Group */
+.fab-group {
   position: fixed;
   bottom: calc(24px + var(--safe-bottom));
   right: calc(50% - 240px + 24px);
+  display: flex;
+  flex-direction: column-reverse;
+  align-items: center;
+  gap: 12px;
+  z-index: 10;
+}
+
+.fab {
   width: 56px;
   height: 56px;
   border-radius: 50%;
-  background: var(--primary);
   color: white;
-  font-size: 1.8rem;
+  font-size: 1.5rem;
   border: none;
   box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4);
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 10;
   transition: transform 0.2s, box-shadow 0.2s;
 }
 
@@ -326,8 +332,18 @@ html, body {
   transform: scale(0.92);
 }
 
+.fab-add {
+  background: var(--primary);
+  font-size: 1.8rem;
+}
+
+.fab-scan {
+  background: var(--success);
+  font-size: 1.3rem;
+}
+
 @media (max-width: 480px) {
-  .fab {
+  .fab-group {
     right: 24px;
   }
 }
@@ -511,6 +527,101 @@ form {
 
 .config-steps a {
   color: var(--primary);
+}
+
+/* Scan Button */
+.input-with-btn {
+  display: flex;
+  gap: 8px;
+  align-items: stretch;
+}
+
+.input-with-btn input {
+  flex: 1;
+}
+
+.btn-scan {
+  width: 44px;
+  background: var(--success);
+  color: white;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: 1.2rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+}
+
+.btn-scan:hover { background: #15803d; }
+
+.product-code-badge {
+  display: inline-block;
+  font-size: 0.7rem;
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  background: #f0fdf4;
+  color: var(--success);
+  font-weight: 500;
+  font-family: monospace;
+}
+
+/* Scanner Overlay */
+.scanner-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: #000;
+  z-index: 300;
+  display: flex;
+  flex-direction: column;
+  animation: fadeIn 0.2s;
+}
+
+.scanner-overlay.hidden {
+  display: none;
+}
+
+.scanner-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  padding-top: max(16px, env(safe-area-inset-top));
+  background: rgba(0,0,0,0.8);
+  color: white;
+  flex-shrink: 0;
+}
+
+.scanner-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.scanner-close {
+  color: white !important;
+  font-size: 1.3rem !important;
+}
+
+.scanner-view {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.scanner-hint {
+  text-align: center;
+  padding: 16px;
+  padding-bottom: max(16px, env(safe-area-inset-bottom));
+  background: rgba(0,0,0,0.8);
+  color: #ccc;
+  font-size: 0.9rem;
+  flex-shrink: 0;
 }
 
 /* Animations */

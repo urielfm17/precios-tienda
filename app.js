@@ -467,20 +467,23 @@ function startScanner() {
         width: 640,
         height: 480,
         facingMode: 'environment'
-      }
+      },
+      area: { top: '0%', right: '0%', left: '0%', bottom: '0%' }
     },
-    locator: {
-      patchSize: 'x-large',
-      halfSample: true
-    },
-    numOfWorkers: 0,
     decoder: {
       readers: [
         'ean_reader', 'ean_8_reader', 'upc_reader',
-        'upc_e_reader', 'code_128_reader', 'code_39_reader'
-      ]
+        'upc_e_reader', 'code_128_reader'
+      ],
+      debug: {
+        drawBoundingBox: false,
+        showPattern: false,
+        showCanvas: false
+      }
     },
-    locate: true
+    locate: false,
+    numOfWorkers: 0,
+    frequency: 10
   }, (err) => {
     if (err) {
       if (err.toString().includes('NotAllowedError') || err.toString().includes('Permission')) {
@@ -492,6 +495,17 @@ function startScanner() {
       return;
     }
     Quagga.start();
+
+    const hint = document.querySelector('.scanner-hint');
+    if (hint) hint.textContent = 'Escaneando... acerca el código de barras';
+  });
+
+  let processing = false;
+  Quagga.onProcessed(() => {
+    if (!processing) {
+      processing = true;
+      setTimeout(() => { processing = false; }, 500);
+    }
   });
 
   Quagga.onDetected((data) => {

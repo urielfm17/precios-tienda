@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#2563eb">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Precios Tienda">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="manifest" href="manifest.json">
+  <title>Precios Tienda</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div id="app">
+    <!-- Header -->
+    <header id="app-header">
+      <h1>Precios Tienda</h1>
+      <button id="sync-status" class="sync-btn" title="Estado de conexión">&#9679;</button>
+    </header>
+
+    <!-- Navigation Tabs -->
+    <nav id="tab-bar">
+      <button class="tab active" data-tab="products" id="tab-products">
+        <span class="tab-icon">&#9741;</span>
+        <span class="tab-label">Productos</span>
+      </button>
+      <button class="tab" data-tab="categories" id="tab-categories">
+        <span class="tab-icon">&#9776;</span>
+        <span class="tab-label">Categorías</span>
+      </button>
+    </nav>
+
+    <!-- Products View -->
+    <section id="view-products" class="view active">
+      <!-- Search -->
+      <div class="search-bar">
+        <input type="text" id="search-input" placeholder="Buscar producto..." autocomplete="off">
+        <button id="clear-search" class="btn-icon" hidden>&#10005;</button>
+      </div>
+
+      <!-- Category Filters -->
+      <div id="category-filters" class="category-chips">
+        <button class="chip active" data-category="all">Todos</button>
+      </div>
+
+      <!-- Product List -->
+      <div id="product-list" class="product-list">
+        <div class="empty-state" id="empty-products">
+          <p>No hay productos aún</p>
+          <p class="sub">Toca + para agregar tu primer producto</p>
+        </div>
+      </div>
+
+      <!-- FAB -->
+      <button id="fab-add" class="fab">+</button>
+    </section>
+
+    <!-- Categories View -->
+    <section id="view-categories" class="view">
+      <div class="view-header">
+        <h2>Categorías</h2>
+        <button id="btn-add-category" class="btn-primary">+ Agregar</button>
+      </div>
+      <div id="categories-list" class="categories-list">
+        <div class="empty-state" id="empty-categories">
+          <p>No hay categorías aún</p>
+          <p class="sub">Agrega categorías para organizar tus productos</p>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- Modal Overlay -->
+  <div id="modal-overlay" class="modal-overlay hidden">
+    <div id="modal" class="modal">
+      <div class="modal-header">
+        <h2 id="modal-title">Producto</h2>
+        <button id="modal-close" class="btn-icon">&#10005;</button>
+      </div>
+      <form id="product-form">
+        <input type="hidden" id="product-id">
+        <div class="form-group">
+          <label for="product-name">Nombre del producto</label>
+          <input type="text" id="product-name" required placeholder="Ej: Leche Entera">
+        </div>
+        <div class="form-group">
+          <label for="product-price">Precio ($)</label>
+          <input type="number" id="product-price" step="0.01" min="0" required placeholder="0.00">
+        </div>
+        <div class="form-group">
+          <label for="product-category">Categoría</label>
+          <select id="product-category" required>
+            <option value="">Seleccionar categoría</option>
+          </select>
+        </div>
+        <div class="modal-actions">
+          <button type="button" id="btn-delete-product" class="btn-danger hidden">Eliminar</button>
+          <div class="modal-actions-right">
+            <button type="button" id="btn-cancel" class="btn-secondary">Cancelar</button>
+            <button type="submit" id="btn-save" class="btn-primary">Guardar</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Category Modal -->
+  <div id="category-modal-overlay" class="modal-overlay hidden">
+    <div id="category-modal" class="modal">
+      <div class="modal-header">
+        <h2 id="category-modal-title">Categoría</h2>
+        <button id="category-modal-close" class="btn-icon">&#10005;</button>
+      </div>
+      <form id="category-form">
+        <input type="hidden" id="category-id">
+        <div class="form-group">
+          <label for="category-name">Nombre de la categoría</label>
+          <input type="text" id="category-name" required placeholder="Ej: Lácteos">
+        </div>
+        <div class="modal-actions">
+          <button type="button" id="btn-delete-category" class="btn-danger hidden">Eliminar</button>
+          <div class="modal-actions-right">
+            <button type="button" id="btn-category-cancel" class="btn-secondary">Cancelar</button>
+            <button type="submit" id="btn-category-save" class="btn-primary">Guardar</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+  <script src="firebase-config.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

@@ -505,13 +505,22 @@ function startScanner() {
 
   Quagga.onDetected((data) => {
     const code = data.codeResult.code;
-    if (!code) return;
+    const confidence = data.codeResult.confidence || 0;
+    if (!code || confidence < 0.7) return;
+
     scanning = false;
     Quagga.stop();
-    document.getElementById('product-code').value = code;
-    openProductModal(null);
-    showToast('Código: ' + code, 'success');
     overlay.classList.add('hidden');
+
+    document.getElementById('product-code').value = code;
+    const existing = products.find((p) => p.code === code);
+    if (existing) {
+      showToast('Código ya registrado: ' + existing.name, 'warning');
+      openProductModal(existing.id);
+    } else {
+      openProductModal(null);
+      showToast('Código: ' + code, 'success');
+    }
   });
 }
 

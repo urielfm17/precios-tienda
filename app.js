@@ -496,16 +496,11 @@ function startScanner() {
     }
     Quagga.start();
 
+    const line = document.createElement('div');
+    line.className = 'scanner-line';
+    view.appendChild(line);
     const hint = document.querySelector('.scanner-hint');
     if (hint) hint.textContent = 'Escaneando... acerca el código de barras';
-  });
-
-  let processing = false;
-  Quagga.onProcessed(() => {
-    if (!processing) {
-      processing = true;
-      setTimeout(() => { processing = false; }, 500);
-    }
   });
 
   Quagga.onDetected((data) => {

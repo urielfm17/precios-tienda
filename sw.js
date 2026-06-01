@@ -1,12 +1,14 @@
 const CACHE_NAME = 'precios-tienda-v1';
 
+const BASE = '/precios-tienda';
+
 const STATIC_ASSETS = [
-  '/',
-  '/index.html',
-  '/styles.css',
-  '/app.js',
-  '/firebase-config.js',
-  '/manifest.json'
+  BASE + '/',
+  BASE + '/index.html',
+  BASE + '/styles.css',
+  BASE + '/app.js',
+  BASE + '/firebase-config.js',
+  BASE + '/manifest.json'
 ];
 
 self.addEventListener('install', (event) => {

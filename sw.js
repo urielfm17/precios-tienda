@@ -1,4 +1,4 @@
-const CACHE_NAME = 'precios-tienda-v1';
+const CACHE_NAME = 'precios-tienda-v2';
 
 const BASE = '/precios-tienda';
 

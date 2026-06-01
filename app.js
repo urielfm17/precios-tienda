@@ -437,7 +437,11 @@ document.getElementById('btn-delete-category').addEventListener('click', deleteC
 let html5Scanner = null;
 
 function initScanner() {
-  if (!('Html5Qrcode' in window)) return;
+  if (!('Html5Qrcode' in window)) {
+    document.getElementById('fab-scan').classList.add('hidden');
+    document.getElementById('btn-scan-form').classList.add('hidden');
+    return;
+  }
 
   document.getElementById('fab-scan').addEventListener('click', startScanner);
   document.getElementById('btn-scan-form').addEventListener('click', startScanner);
@@ -449,50 +453,70 @@ function startScanner() {
   overlay.classList.remove('hidden');
 
   const view = document.getElementById('scanner-view');
-  view.innerHTML = '';
+  view.innerHTML = '<p style="color:#fff;padding:40px;text-align:center">Iniciando cámara...</p>';
 
-  try {
-    html5Scanner = new Html5Qrcode('scanner-view');
+  navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } }).then((stream) => {
+    stream.getTracks().forEach(t => t.stop());
 
-    html5Scanner.start(
-      { facingMode: 'environment' },
-      {
-        fps: 10,
-        qrbox: { width: 280, height: 120 },
-        formatsToSupport: [
-          Html5QrcodeSupportedFormats.EAN_13,
-          Html5QrcodeSupportedFormats.EAN_8,
-          Html5QrcodeSupportedFormats.UPC_A,
-          Html5QrcodeSupportedFormats.UPC_E,
-          Html5QrcodeSupportedFormats.CODE_128,
-          Html5QrcodeSupportedFormats.CODE_39,
-          Html5QrcodeSupportedFormats.CODE_93,
-          Html5QrcodeSupportedFormats.ITF,
-          Html5QrcodeSupportedFormats.QR_CODE
-        ]
-      },
-      onScanSuccess,
-      () => {}
-    );
-  } catch (err) {
-    showToast('Error al iniciar la cámara', 'error');
-    stopScanner();
-  }
+    Html5Qrcode.getCameras().then((cameras) => {
+      if (!cameras || cameras.length === 0) {
+        showToast('No se encontró cámara trasera', 'error');
+        stopScanner();
+        return;
+      }
+
+      const backCamera = cameras.find(c =>
+        c.label.toLowerCase().includes('back') ||
+        c.label.toLowerCase().includes('trás') ||
+        c.label.toLowerCase().includes('environ')
+      ) || cameras[0];
+
+      view.innerHTML = '';
+
+      html5Scanner = new Html5Qrcode('scanner-view');
+
+      const formats = Html5QrcodeSupportedFormats || {};
+      const barcodeFormats = [
+        formats.EAN_13, formats.EAN_8,
+        formats.UPC_A, formats.UPC_E,
+        formats.CODE_128, formats.CODE_39,
+        formats.CODE_93, formats.ITF,
+        formats.QR_CODE
+      ].filter(f => f !== undefined);
+
+      html5Scanner.start(
+        backCamera.id,
+        {
+          fps: 15,
+          qrbox: { width: 280, height: 100 },
+          formatsToSupport: barcodeFormats
+        },
+        onScanSuccess,
+        () => {}
+      ).catch((err) => {
+        showToast('Error: ' + (err.message || err), 'error');
+        stopScanner();
+      });
+    }).catch((err) => {
+      showToast('Error: ' + (err.message || err), 'error');
+      stopScanner();
+    });
+  }).catch(() => {
+    view.innerHTML = '<div style="color:#fff;padding:40px;text-align:center"><p style="font-size:2rem;margin-bottom:16px">&#128248;</p><p style="font-size:1rem">Permiso de cámara denegado</p><p style="font-size:0.85rem;margin-top:8px;color:#aaa">Ve a Ajustes > Safari > Cámara y permite el acceso</p></div>';
+  });
 }
 
 function onScanSuccess(decodedText) {
   stopScanner();
   document.getElementById('product-code').value = decodedText;
   openProductModal(null);
-  showToast('Código detectado: ' + decodedText, 'success');
+  showToast('Código: ' + decodedText, 'success');
 }
 
 function stopScanner() {
   if (html5Scanner) {
-    try {
-      html5Scanner.stop();
-      html5Scanner.clear();
-    } catch {}
+    try { html5Scanner.stop(); } catch {}
+    try { html5Scanner.clear(); } catch {}
     html5Scanner = null;
   }
   document.getElementById('scanner-view').innerHTML = '';

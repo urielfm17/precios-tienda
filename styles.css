@@ -608,10 +608,23 @@ form {
 
 .scanner-view {
   flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  position: relative;
   overflow: hidden;
+  background: #000;
+}
+
+.scanner-view video,
+.scanner-view canvas {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+.scanner-view canvas.drawingBuffer {
+  z-index: 1;
 }
 
 .scanner-hint {

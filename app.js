@@ -434,10 +434,10 @@ document.getElementById('category-form').addEventListener('submit', saveCategory
 document.getElementById('btn-delete-category').addEventListener('click', deleteCategory);
 
 // Scanner
-let html5Scanner = null;
+let scanning = false;
 
 function initScanner() {
-  if (!('Html5Qrcode' in window)) {
+  if (typeof Quagga === 'undefined') {
     document.getElementById('fab-scan').classList.add('hidden');
     document.getElementById('btn-scan-form').classList.add('hidden');
     return;
@@ -449,76 +449,68 @@ function initScanner() {
 }
 
 function startScanner() {
+  if (scanning) return;
+  scanning = true;
+
   const overlay = document.getElementById('scanner-overlay');
   overlay.classList.remove('hidden');
 
   const view = document.getElementById('scanner-view');
-  view.innerHTML = '<p style="color:#fff;padding:40px;text-align:center">Iniciando cámara...</p>';
+  view.innerHTML = '';
 
-  navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } }).then((stream) => {
-    stream.getTracks().forEach(t => t.stop());
-
-    Html5Qrcode.getCameras().then((cameras) => {
-      if (!cameras || cameras.length === 0) {
-        showToast('No se encontró cámara trasera', 'error');
-        stopScanner();
-        return;
+  Quagga.init({
+    inputStream: {
+      name: 'Live',
+      type: 'LiveStream',
+      target: view,
+      constraints: {
+        width: { min: 640 },
+        height: { min: 480 },
+        facingMode: 'environment',
+        aspectRatio: { min: 1, max: 2 }
       }
-
-      const backCamera = cameras.find(c =>
-        c.label.toLowerCase().includes('back') ||
-        c.label.toLowerCase().includes('trás') ||
-        c.label.toLowerCase().includes('environ')
-      ) || cameras[0];
-
-      view.innerHTML = '';
-
-      html5Scanner = new Html5Qrcode('scanner-view');
-
-      const formats = Html5QrcodeSupportedFormats || {};
-      const barcodeFormats = [
-        formats.EAN_13, formats.EAN_8,
-        formats.UPC_A, formats.UPC_E,
-        formats.CODE_128, formats.CODE_39,
-        formats.CODE_93, formats.ITF,
-        formats.QR_CODE
-      ].filter(f => f !== undefined);
-
-      html5Scanner.start(
-        backCamera.id,
-        {
-          fps: 15,
-          qrbox: { width: 280, height: 100 },
-          formatsToSupport: barcodeFormats
-        },
-        onScanSuccess,
-        () => {}
-      ).catch((err) => {
-        showToast('Error: ' + (err.message || err), 'error');
+    },
+    locator: {
+      patchSize: 'medium',
+      halfSample: true
+    },
+    numOfWorkers: navigator.hardwareConcurrency || 2,
+    decoder: {
+      readers: [
+        'ean_reader', 'ean_8_reader', 'upc_reader',
+        'upc_e_reader', 'code_128_reader', 'code_39_reader',
+        'code_93_reader', 'i2of5_reader'
+      ]
+    },
+    locate: true
+  }, (err) => {
+    if (err) {
+      if (err.toString().includes('NotAllowedError') || err.toString().includes('Permission')) {
+        view.innerHTML = '<div style="color:#fff;padding:40px;text-align:center"><p style="font-size:2rem;margin-bottom:16px">&#128248;</p><p style="font-size:1rem">Permiso de cámara denegado</p><p style="font-size:0.85rem;margin-top:8px;color:#aaa">Ve a Ajustes > Safari > Cámara y permite el acceso</p></div>';
+      } else {
+        showToast('Error al iniciar cámara', 'error');
         stopScanner();
-      });
-    }).catch((err) => {
-      showToast('Error: ' + (err.message || err), 'error');
-      stopScanner();
-    });
-  }).catch(() => {
-    view.innerHTML = '<div style="color:#fff;padding:40px;text-align:center"><p style="font-size:2rem;margin-bottom:16px">&#128248;</p><p style="font-size:1rem">Permiso de cámara denegado</p><p style="font-size:0.85rem;margin-top:8px;color:#aaa">Ve a Ajustes > Safari > Cámara y permite el acceso</p></div>';
+      }
+      return;
+    }
+    Quagga.start();
+  });
+
+  Quagga.onDetected((data) => {
+    const code = data.codeResult.code;
+    if (!code) return;
+    scanning = false;
+    Quagga.stop();
+    document.getElementById('product-code').value = code;
+    openProductModal(null);
+    showToast('Código: ' + code, 'success');
+    overlay.classList.add('hidden');
   });
 }
 
-function onScanSuccess(decodedText) {
-  stopScanner();
-  document.getElementById('product-code').value = decodedText;
-  openProductModal(null);
-  showToast('Código: ' + decodedText, 'success');
-}
-
 function stopScanner() {
-  if (html5Scanner) {
-    try { html5Scanner.stop(); } catch {}
-    try { html5Scanner.clear(); } catch {}
-    html5Scanner = null;
-  }
+  scanning = false;
+  try { Quagga.stop(); } catch {}
   document.getElementById('scanner-view').innerHTML = '';
   document.getElementById('scanner-overlay').classList.add('hidden');
 }

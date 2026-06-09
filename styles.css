@@ -74,40 +74,6 @@ html, body {
 .sync-btn.online { opacity: 1; }
 .sync-btn.offline { opacity: 0.4; }
 
-/* Tab Bar */
-#tab-bar {
-  display: flex;
-  background: var(--surface);
-  border-bottom: 1px solid var(--border);
-  flex-shrink: 0;
-}
-
-.tab {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  padding: 12px;
-  background: none;
-  border: none;
-  color: var(--text-secondary);
-  font-size: 0.9rem;
-  cursor: pointer;
-  border-bottom: 2px solid transparent;
-  transition: all 0.2s;
-}
-
-.tab.active {
-  color: var(--primary);
-  border-bottom-color: var(--primary);
-  font-weight: 600;
-}
-
-.tab-icon {
-  font-size: 1.1rem;
-}
-
 /* Views */
 .view {
   flex: 1;
@@ -156,7 +122,7 @@ html, body {
   padding: 4px;
 }
 
-/* Category Chips */
+/* Business Chips */
 .category-chips {
   display: flex;
   gap: 8px;
@@ -233,60 +199,12 @@ html, body {
   white-space: nowrap;
 }
 
-.product-category-badge {
-  display: inline-block;
-  font-size: 0.75rem;
-  padding: 2px 10px;
-  border-radius: var(--radius-full);
-  background: #eff6ff;
-  color: var(--primary);
-  font-weight: 500;
-}
-
 .product-price {
   font-size: 1.15rem;
   font-weight: 700;
   color: var(--primary);
   margin-left: 12px;
   flex-shrink: 0;
-}
-
-/* Categories List */
-.categories-list {
-  flex: 1;
-  padding: 12px 16px;
-  padding-bottom: 80px;
-  overflow-y: auto;
-}
-
-.category-card {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 14px 16px;
-  background: var(--surface);
-  border-radius: var(--radius-sm);
-  margin-bottom: 8px;
-  box-shadow: var(--shadow);
-  cursor: pointer;
-  transition: transform 0.1s;
-}
-
-.category-card:active {
-  transform: scale(0.98);
-}
-
-.category-card-name {
-  font-size: 1rem;
-  font-weight: 500;
-}
-
-.category-card-count {
-  font-size: 0.85rem;
-  color: var(--text-secondary);
-  background: var(--bg);
-  padding: 2px 10px;
-  border-radius: var(--radius-full);
 }
 
 /* Empty State */
@@ -552,3 +470,17 @@ form {
   66% { content: '..'; }
   100% { content: '...'; }
 }
+
+/* Business badges */
+.biz-badge {
+  font-size: 9px;
+  font-weight: 600;
+  padding: 1px 6px;
+  border-radius: 9999px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+.biz-badge.abarrotes { background: #f0fdf4; color: #15803d; }
+.biz-badge.papeleria { background: #eef2ff; color: #4338ca; }
+.biz-badge.conasupo { background: #fffbeb; color: #b45309; }
+.biz-badge.refaccionaria { background: #fef2f2; color: #b91c1c; }

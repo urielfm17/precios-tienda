@@ -1,11 +1,8 @@
 let products = [];
-let categories = [];
 let currentFilter = 'all';
 let searchQuery = '';
 let currentEditId = null;
-let currentCategoryEditId = null;
 let productsUnsubscribe = null;
-let categoriesUnsubscribe = null;
 
 function getDB() {
   return firebase.firestore();
@@ -15,7 +12,6 @@ function initApp() {
   firebase.firestore().enableNetwork();
   registerServiceWorker();
   listenToProducts();
-  listenToCategories();
   updateOnlineStatus();
   window.addEventListener('online', updateOnlineStatus);
   window.addEventListener('offline', updateOnlineStatus);
@@ -57,54 +53,12 @@ function listenToProducts() {
     });
 }
 
-function listenToCategories() {
-  const db = getDB();
-  if (!db) return;
-  if (categoriesUnsubscribe) categoriesUnsubscribe();
-
-  categoriesUnsubscribe = db.collection('categories')
-    .orderBy('name', 'asc')
-    .onSnapshot((snapshot) => {
-      categories = [];
-      snapshot.forEach((doc) => {
-        categories.push({ id: doc.id, ...doc.data() });
-      });
-      renderCategories();
-      renderCategoryFilters();
-      populateCategorySelect();
-    }, (error) => {
-      console.error('Error listening to categories:', error);
-      showToast('Error al cargar categorías', 'error');
-    });
-}
-
-function renderCategoryFilters() {
-  const container = document.getElementById('category-filters');
-  let html = '<button class="chip active" data-category="all">Todos</button>';
-
-  categories.forEach((cat) => {
-    const active = currentFilter === cat.id ? 'active' : '';
-    html += `<button class="chip ${active}" data-category="${cat.id}">${escHtml(cat.name)}</button>`;
-  });
-
-  container.innerHTML = html;
-
-  container.querySelectorAll('.chip').forEach((btn) => {
-    btn.addEventListener('click', () => {
-      container.querySelectorAll('.chip').forEach((c) => c.classList.remove('active'));
-      btn.classList.add('active');
-      currentFilter = btn.dataset.category;
-      renderProducts();
-    });
-  });
-}
-
 function renderProducts() {
   const container = document.getElementById('product-list');
   let filtered = [...products];
 
   if (currentFilter !== 'all') {
-    filtered = filtered.filter((p) => p.categoryId === currentFilter);
+    filtered = filtered.filter((p) => p.business === currentFilter);
   }
 
   if (searchQuery.trim()) {
@@ -116,21 +70,21 @@ function renderProducts() {
     container.innerHTML = `
       <div class="empty-state">
         <p>${products.length === 0 ? 'No hay productos aún' : 'No se encontraron productos'}</p>
-        <p class="sub">${products.length === 0 ? 'Toca + para agregar tu primer producto' : 'Intenta con otra búsqueda o categoría'}</p>
+        <p class="sub">${products.length === 0 ? 'Toca + para agregar tu primer producto' : 'Intenta con otra búsqueda o negocio'}</p>
       </div>`;
     return;
   }
 
   let html = '';
   filtered.forEach((p) => {
-    const cat = categories.find((c) => c.id === p.categoryId);
-    const catName = cat ? escHtml(cat.name) : 'Sin categoría';
     const price = parseFloat(p.price || 0).toFixed(2);
+    const bizName = p.business ? p.business.charAt(0).toUpperCase() + p.business.slice(1) : 'Sin negocio';
+    const sizeHtml = p.size ? ` <span style="color:var(--text-muted);font-weight:400;font-size:11px">(${escHtml(p.size)})</span>` : '';
     html += `
       <div class="product-card" data-id="${p.id}">
         <div class="product-info">
-          <div class="product-name">${escHtml(p.name)}</div>
-          <span class="product-category-badge">${catName}</span>
+          <div class="product-name">${escHtml(p.name)}${sizeHtml}</div>
+          <span class="biz-badge ${p.business || ''}">${bizName}</span>
         </div>
         <div class="product-price">$${price}</div>
       </div>`;
@@ -143,48 +97,6 @@ function renderProducts() {
       openProductModal(card.dataset.id);
     });
   });
-}
-
-function renderCategories() {
-  const container = document.getElementById('categories-list');
-
-  if (categories.length === 0) {
-    container.innerHTML = `
-      <div class="empty-state">
-        <p>No hay categorías aún</p>
-        <p class="sub">Agrega categorías para organizar tus productos</p>
-      </div>`;
-    return;
-  }
-
-  let html = '';
-  categories.forEach((cat) => {
-    const count = products.filter((p) => p.categoryId === cat.id).length;
-    html += `
-      <div class="category-card" data-id="${cat.id}">
-        <span class="category-card-name">${escHtml(cat.name)}</span>
-        <span class="category-card-count">${count} producto${count !== 1 ? 's' : ''}</span>
-      </div>`;
-  });
-
-  container.innerHTML = html;
-
-  container.querySelectorAll('.category-card').forEach((card) => {
-    card.addEventListener('click', () => {
-      openCategoryModal(card.dataset.id);
-    });
-  });
-}
-
-function populateCategorySelect() {
-  const select = document.getElementById('product-category');
-  const currentValue = select.value;
-  let html = '<option value="">Seleccionar categoría</option>';
-  categories.forEach((cat) => {
-    const selected = cat.id === currentValue ? 'selected' : '';
-    html += `<option value="${cat.id}" ${selected}>${escHtml(cat.name)}</option>`;
-  });
-  select.innerHTML = html;
 }
 
 function openProductModal(id) {
@@ -200,38 +112,16 @@ function openProductModal(id) {
     title.textContent = 'Editar Producto';
     document.getElementById('product-id').value = id;
     document.getElementById('product-name').value = product.name || '';
+    document.getElementById('product-size').value = product.size || '';
     document.getElementById('product-price').value = product.price || '';
-    document.getElementById('product-category').value = product.categoryId || '';
+    document.getElementById('product-business').value = product.business || '';
     deleteBtn.classList.remove('hidden');
   } else {
     title.textContent = 'Agregar Producto';
     deleteBtn.classList.add('hidden');
   }
 
-  populateCategorySelect();
   document.getElementById('modal-overlay').classList.remove('hidden');
-}
-
-function openCategoryModal(id) {
-  currentCategoryEditId = id || null;
-  const title = document.getElementById('category-modal-title');
-  const deleteBtn = document.getElementById('btn-delete-category');
-  const form = document.getElementById('category-form');
-  form.reset();
-
-  if (id) {
-    const cat = categories.find((c) => c.id === id);
-    if (!cat) return;
-    title.textContent = 'Editar Categoría';
-    document.getElementById('category-id').value = id;
-    document.getElementById('category-name').value = cat.name || '';
-    deleteBtn.classList.remove('hidden');
-  } else {
-    title.textContent = 'Agregar Categoría';
-    deleteBtn.classList.add('hidden');
-  }
-
-  document.getElementById('category-modal-overlay').classList.remove('hidden');
 }
 
 async function saveProduct(e) {
@@ -241,18 +131,20 @@ async function saveProduct(e) {
 
   const id = document.getElementById('product-id').value;
   const name = document.getElementById('product-name').value.trim();
+  const size = document.getElementById('product-size').value.trim();
   const price = parseFloat(document.getElementById('product-price').value);
-  const categoryId = document.getElementById('product-category').value;
+  const business = document.getElementById('product-business').value;
 
-  if (!name || isNaN(price) || !categoryId) {
+  if (!name || isNaN(price) || !business) {
     showToast('Completa todos los campos', 'error');
     return;
   }
 
   const data = {
     name,
+    size: size || '',
     price,
-    categoryId,
+    business,
     updatedAt: firebase.firestore.FieldValue.serverTimestamp()
   };
 
@@ -290,68 +182,10 @@ async function deleteProduct() {
   }
 }
 
-async function saveCategory(e) {
-  e.preventDefault();
-  const db = getDB();
-  if (!db) return;
-
-  const id = document.getElementById('category-id').value;
-  const name = document.getElementById('category-name').value.trim();
-
-  if (!name) {
-    showToast('Ingresa un nombre para la categoría', 'error');
-    return;
-  }
-
-  try {
-    if (id) {
-      await db.collection('categories').doc(id).update({ name });
-      showToast('Categoría actualizada', 'success');
-    } else {
-      await db.collection('categories').add({ name });
-      showToast('Categoría agregada', 'success');
-    }
-    closeCategoryModal();
-  } catch (err) {
-    console.error('Error saving category:', err);
-    showToast('Error al guardar la categoría', 'error');
-  }
-}
-
-async function deleteCategory() {
-  const db = getDB();
-  if (!db) return;
-  const id = document.getElementById('category-id').value;
-  if (!id) return;
-
-  const productsInCategory = products.filter((p) => p.categoryId === id);
-  let msg = '¿Eliminar esta categoría?';
-  if (productsInCategory.length > 0) {
-    msg = `Hay ${productsInCategory.length} producto(s) en esta categoría. ¿Eliminarla de todas formas? (Los productos se quedarán sin categoría)`;
-  }
-
-  if (!confirm(msg)) return;
-
-  try {
-    await db.collection('categories').doc(id).delete();
-    showToast('Categoría eliminada', 'success');
-    closeCategoryModal();
-  } catch (err) {
-    console.error('Error deleting category:', err);
-    showToast('Error al eliminar', 'error');
-  }
-}
-
 function closeProductModal() {
   document.getElementById('modal-overlay').classList.add('hidden');
   document.getElementById('product-form').reset();
   currentEditId = null;
-}
-
-function closeCategoryModal() {
-  document.getElementById('category-modal-overlay').classList.add('hidden');
-  document.getElementById('category-form').reset();
-  currentCategoryEditId = null;
 }
 
 function showToast(message, type) {
@@ -380,16 +214,6 @@ function escHtml(str) {
   return div.innerHTML;
 }
 
-// Tab Navigation
-document.querySelectorAll('.tab').forEach((tab) => {
-  tab.addEventListener('click', () => {
-    document.querySelectorAll('.tab').forEach((t) => t.classList.remove('active'));
-    tab.classList.add('active');
-    document.querySelectorAll('.view').forEach((v) => v.classList.remove('active'));
-    document.getElementById(`view-${tab.dataset.tab}`).classList.add('active');
-  });
-});
-
 // Search
 document.getElementById('search-input').addEventListener('input', (e) => {
   searchQuery = e.target.value;
@@ -404,6 +228,16 @@ document.getElementById('clear-search').addEventListener('click', () => {
   renderProducts();
 });
 
+// Business filters
+document.getElementById('business-filters').addEventListener('click', (e) => {
+  const chip = e.target.closest('.chip');
+  if (!chip) return;
+  document.querySelectorAll('.chip').forEach((c) => c.classList.remove('active'));
+  chip.classList.add('active');
+  currentFilter = chip.dataset.business;
+  renderProducts();
+});
+
 // Product Modal
 document.getElementById('fab-add').addEventListener('click', () => openProductModal(null));
 document.getElementById('modal-close').addEventListener('click', closeProductModal);
@@ -414,17 +248,6 @@ document.getElementById('modal-overlay').addEventListener('click', (e) => {
 
 document.getElementById('product-form').addEventListener('submit', saveProduct);
 document.getElementById('btn-delete-product').addEventListener('click', deleteProduct);
-
-// Category Modal
-document.getElementById('btn-add-category').addEventListener('click', () => openCategoryModal(null));
-document.getElementById('category-modal-close').addEventListener('click', closeCategoryModal);
-document.getElementById('btn-category-cancel').addEventListener('click', closeCategoryModal);
-document.getElementById('category-modal-overlay').addEventListener('click', (e) => {
-  if (e.target === e.currentTarget) closeCategoryModal();
-});
-
-document.getElementById('category-form').addEventListener('submit', saveCategory);
-document.getElementById('btn-delete-category').addEventListener('click', deleteCategory);
 
 // Init
 document.addEventListener('DOMContentLoaded', () => {

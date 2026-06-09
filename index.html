@@ -20,18 +20,6 @@
       <button id="sync-status" class="sync-btn" title="Estado de conexión">&#9679;</button>
     </header>
 
-    <!-- Navigation Tabs -->
-    <nav id="tab-bar">
-      <button class="tab active" data-tab="products" id="tab-products">
-        <span class="tab-icon">&#9741;</span>
-        <span class="tab-label">Productos</span>
-      </button>
-      <button class="tab" data-tab="categories" id="tab-categories">
-        <span class="tab-icon">&#9776;</span>
-        <span class="tab-label">Categorías</span>
-      </button>
-    </nav>
-
     <!-- Products View -->
     <section id="view-products" class="view active">
       <!-- Search -->
@@ -40,9 +28,13 @@
         <button id="clear-search" class="btn-icon" hidden>&#10005;</button>
       </div>
 
-      <!-- Category Filters -->
-      <div id="category-filters" class="category-chips">
-        <button class="chip active" data-category="all">Todos</button>
+      <!-- Business Filters -->
+      <div id="business-filters" class="category-chips">
+        <button class="chip active" data-business="all">Todos</button>
+        <button class="chip" data-business="abarrotes">Abarrotes</button>
+        <button class="chip" data-business="papeleria">Papelería</button>
+        <button class="chip" data-business="conasupo">Conasupo</button>
+        <button class="chip" data-business="refaccionaria">Refaccionaria</button>
       </div>
 
       <!-- Product List -->
@@ -55,20 +47,6 @@
 
       <!-- FAB -->
       <button id="fab-add" class="fab">+</button>
-    </section>
-
-    <!-- Categories View -->
-    <section id="view-categories" class="view">
-      <div class="view-header">
-        <h2>Categorías</h2>
-        <button id="btn-add-category" class="btn-primary">+ Agregar</button>
-      </div>
-      <div id="categories-list" class="categories-list">
-        <div class="empty-state" id="empty-categories">
-          <p>No hay categorías aún</p>
-          <p class="sub">Agrega categorías para organizar tus productos</p>
-        </div>
-      </div>
     </section>
   </div>
 
@@ -86,13 +64,21 @@
           <input type="text" id="product-name" required placeholder="Ej: Leche Entera">
         </div>
         <div class="form-group">
+          <label for="product-size">Tamaño / Presentación <span style="font-weight:400;color:#919baa">(opcional)</span></label>
+          <input type="text" id="product-size" placeholder="Ej: 600ml, 1.5L, 500g, pieza">
+        </div>
+        <div class="form-group">
           <label for="product-price">Precio ($)</label>
           <input type="number" id="product-price" step="0.01" min="0" required placeholder="0.00">
         </div>
         <div class="form-group">
-          <label for="product-category">Categoría</label>
-          <select id="product-category" required>
-            <option value="">Seleccionar categoría</option>
+          <label for="product-business">Negocio (POS)</label>
+          <select id="product-business" required>
+            <option value="">Seleccionar negocio</option>
+            <option value="abarrotes">Abarrotes</option>
+            <option value="papeleria">Papelería</option>
+            <option value="conasupo">Conasupo</option>
+            <option value="refaccionaria">Refaccionaria</option>
           </select>
         </div>
         <div class="modal-actions">
@@ -106,33 +92,9 @@
     </div>
   </div>
 
-  <!-- Category Modal -->
-  <div id="category-modal-overlay" class="modal-overlay hidden">
-    <div id="category-modal" class="modal">
-      <div class="modal-header">
-        <h2 id="category-modal-title">Categoría</h2>
-        <button id="category-modal-close" class="btn-icon">&#10005;</button>
-      </div>
-      <form id="category-form">
-        <input type="hidden" id="category-id">
-        <div class="form-group">
-          <label for="category-name">Nombre de la categoría</label>
-          <input type="text" id="category-name" required placeholder="Ej: Lácteos">
-        </div>
-        <div class="modal-actions">
-          <button type="button" id="btn-delete-category" class="btn-danger hidden">Eliminar</button>
-          <div class="modal-actions-right">
-            <button type="button" id="btn-category-cancel" class="btn-secondary">Cancelar</button>
-            <button type="submit" id="btn-category-save" class="btn-primary">Guardar</button>
-          </div>
-        </div>
-      </form>
-    </div>
-  </div>
-
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
   <script src="firebase-config.js?v=2"></script>
-  <script src="app.js?v=2"></script>
+  <script src="app.js?v=3"></script>
 </body>
 </html>

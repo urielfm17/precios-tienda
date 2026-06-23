@@ -17,6 +17,7 @@ html, body {
 /* HEADER */
 header {
   background: var(--surface); padding: 10px 16px; flex-shrink: 0;
+  padding-top: calc(10px + env(safe-area-inset-top));
   display: flex; align-items: center; justify-content: space-between;
   border-bottom: 1px solid var(--border);
 }
@@ -96,6 +97,7 @@ header h1 { font-size: 16px; font-weight: 700; color: var(--primary); }
   display: flex; align-items: center; gap: 10px;
   background: var(--surface); border-top: 1px solid var(--border);
   padding: 10px 16px; flex-shrink: 0;
+  padding-bottom: calc(10px + env(safe-area-inset-bottom));
 }
 .bb-total { text-align: right; flex: 1; }
 .bb-label { font-size: 10px; color: var(--text-dim); text-transform: uppercase; letter-spacing: .5px; }
@@ -119,6 +121,8 @@ header h1 { font-size: 16px; font-weight: 700; color: var(--primary); }
 #quick-price {
   display: none; position: fixed; inset: 0; background: rgba(0,0,0,.7); z-index: 20;
   align-items: center; justify-content: center; padding: 20px;
+  padding-top: calc(20px + env(safe-area-inset-top));
+  padding-bottom: calc(20px + env(safe-area-inset-bottom));
 }
 #quick-price.show { display: flex; }
 .qp-box {
@@ -145,6 +149,8 @@ header h1 { font-size: 16px; font-weight: 700; color: var(--primary); }
 #modal-overlay {
   position: fixed; inset: 0; background: rgba(0,0,0,.7); z-index: 30;
   display: none; align-items: center; justify-content: center; padding: 20px;
+  padding-top: calc(20px + env(safe-area-inset-top));
+  padding-bottom: calc(20px + env(safe-area-inset-bottom));
 }
 #modal-overlay.show { display: flex; }
 #modal-box {
@@ -163,7 +169,7 @@ header h1 { font-size: 16px; font-weight: 700; color: var(--primary); }
 
 /* TOAST */
 #toast {
-  position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%);
+  position: fixed; bottom: calc(80px + env(safe-area-inset-bottom)); left: 50%; transform: translateX(-50%);
   background: var(--surface); color: var(--text); padding: 10px 20px;
   border-radius: var(--radius); font-size: 13px; font-weight: 500;
   box-shadow: 0 4px 20px rgba(0,0,0,.4); z-index: 40;

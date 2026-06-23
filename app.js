@@ -357,17 +357,125 @@ function viewSale(sid) {
 // --- PRODUCTS (admin) ---
 function showProducts() {
   const list = [...products];
-  openModal(`<h2>Productos (${list.length})</h2>
-    <div style="max-height:50vh;overflow-y:auto">
-      ${list.map(p => `
-        <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border)">
-          <div><div style="font-size:13px;font-weight:500">${escHtml(p.name)}</div><div style="font-size:10px;color:var(--text-dim)">${escHtml(p.business||'')}</div></div>
-          <div style="font-size:14px;font-weight:700;color:var(--primary-light)">$${Number(p.price).toFixed(2)}</div>
+  openModal(`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+    <h2 style="margin:0">Productos (${list.length})</h2>
+    <button class="modal-btn modal-primary" onclick="addNewProduct()" style="padding:6px 14px;font-size:13px">+ Nuevo</button>
+  </div>
+  <div style="max-height:55vh;overflow-y:auto">
+    ${list.map(p => `
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border);cursor:pointer" onclick="editProduct('${p.id}')">
+        <div>
+          <div style="font-size:13px;font-weight:500">${escHtml(p.name)}</div>
+          <div style="font-size:10px;color:var(--text-dim)">${escHtml(p.business||'general')}</div>
         </div>
-      `).join('')}
-    </div>
-    <button class="modal-btn modal-cancel" onclick="closeModal()" style="width:100%;margin-top:12px">Cerrar</button>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-size:14px;font-weight:700;color:var(--primary-light)">$${Number(p.price).toFixed(2)}</span>
+          <span style="color:var(--text-dim);font-size:12px">✎</span>
+        </div>
+      </div>
+    `).join('')}
+  </div>
+  <button class="modal-btn modal-cancel" onclick="closeModal()" style="width:100%;margin-top:10px">Cerrar</button>
   `);
+}
+
+function addNewProduct() {
+  openModal(`
+    <h2>Nuevo Producto</h2>
+    <div style="margin-bottom:10px">
+      <label style="font-size:12px;color:var(--text-muted);display:block;margin-bottom:4px">Nombre</label>
+      <input id="ep-name" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:6px;background:var(--card);color:var(--text);font-size:14px;outline:none;font-family:inherit">
+    </div>
+    <div style="margin-bottom:10px">
+      <label style="font-size:12px;color:var(--text-muted);display:block;margin-bottom:4px">Precio ($)</label>
+      <input id="ep-price" type="number" step="0.01" min="0" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:6px;background:var(--card);color:var(--text);font-size:14px;outline:none;font-family:inherit">
+    </div>
+    <div style="margin-bottom:14px">
+      <label style="font-size:12px;color:var(--text-muted);display:block;margin-bottom:4px">Categor&iacute;a</label>
+      <input id="ep-biz" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:6px;background:var(--card);color:var(--text);font-size:14px;outline:none;font-family:inherit" placeholder="general">
+    </div>
+    <div style="display:flex;gap:8px">
+      <button class="modal-btn modal-cancel" onclick="showProducts()" style="flex:1">Cancelar</button>
+      <button class="modal-btn modal-primary" onclick="saveNewProduct()" style="flex:1">Guardar</button>
+    </div>
+  `);
+  setTimeout(() => $('ep-name')?.focus(), 100);
+}
+
+async function saveNewProduct() {
+  const name = $('ep-name')?.value.trim();
+  const price = parseFloat($('ep-price')?.value);
+  const biz = $('ep-biz')?.value.trim() || 'general';
+  if (!name) { toast('Nombre requerido'); return; }
+  if (isNaN(price) || price <= 0) { toast('Precio inválido'); return; }
+  const db = getDB();
+  try {
+    await db.collection('products').add({
+      name, price, business: biz, size: '',
+      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    toast('Producto creado');
+    showProducts();
+  } catch (e) {
+    toast('Error al guardar');
+  }
+}
+
+function editProduct(id) {
+  const p = products.find(x => x.id === id);
+  if (!p) return;
+  openModal(`
+    <h2>Editar Producto</h2>
+    <div style="margin-bottom:10px">
+      <label style="font-size:12px;color:var(--text-muted);display:block;margin-bottom:4px">Nombre</label>
+      <input id="ep-name" value="${escHtml(p.name)}" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:6px;background:var(--card);color:var(--text);font-size:14px;outline:none;font-family:inherit">
+    </div>
+    <div style="margin-bottom:10px">
+      <label style="font-size:12px;color:var(--text-muted);display:block;margin-bottom:4px">Precio ($)</label>
+      <input id="ep-price" type="number" step="0.01" min="0" value="${p.price}" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:6px;background:var(--card);color:var(--text);font-size:14px;outline:none;font-family:inherit">
+    </div>
+    <div style="margin-bottom:14px">
+      <label style="font-size:12px;color:var(--text-muted);display:block;margin-bottom:4px">Categor&iacute;a</label>
+      <input id="ep-biz" value="${escHtml(p.business||'')}" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:6px;background:var(--card);color:var(--text);font-size:14px;outline:none;font-family:inherit">
+    </div>
+    <div style="display:flex;gap:8px">
+      <button class="modal-btn" style="flex:1;background:#c0392b;color:#fff" onclick="deleteProduct('${id}')">Eliminar</button>
+      <button class="modal-btn modal-cancel" onclick="showProducts()" style="flex:1">Cancelar</button>
+      <button class="modal-btn modal-primary" onclick="saveEditProduct('${id}')" style="flex:1">Guardar</button>
+    </div>
+  `);
+}
+
+async function saveEditProduct(id) {
+  const name = $('ep-name')?.value.trim();
+  const price = parseFloat($('ep-price')?.value);
+  const biz = $('ep-biz')?.value.trim() || 'general';
+  if (!name) { toast('Nombre requerido'); return; }
+  if (isNaN(price) || price <= 0) { toast('Precio inválido'); return; }
+  const db = getDB();
+  try {
+    await db.collection('products').doc(id).update({
+      name, price, business: biz,
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    toast('Producto actualizado');
+    showProducts();
+  } catch (e) {
+    toast('Error al guardar');
+  }
+}
+
+async function deleteProduct(id) {
+  if (!confirm('¿Eliminar este producto?')) return;
+  const db = getDB();
+  try {
+    await db.collection('products').doc(id).delete();
+    toast('Producto eliminado');
+    showProducts();
+  } catch (e) {
+    toast('Error al eliminar');
+  }
 }
 
 // --- UI HELPERS ---

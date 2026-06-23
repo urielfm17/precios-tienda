@@ -82,7 +82,7 @@ function bindUI() {
     sug.innerHTML = list.map((p, i) =>
       `<div class="sug-item" data-idx="${i}">
         <div>
-          <div class="sug-name">${p._new ? '➕ ' + escHtml(p.name) : escHtml(p.name)} <span class="sug-cat">${p._new ? 'Nuevo' : escHtml(p.business || '')}</span></div>
+          <div class="sug-name">${p._new ? '➕ ' + escHtml(p.name) : fmtName(p)} <span class="sug-cat">${p._new ? 'Nuevo' : escHtml(p.business || '')}</span></div>
         </div>
         <div style="display:flex;align-items:center;gap:6px">
           ${p._new ? '' : '<span class="sug-price">$' + Number(p.price).toFixed(2) + '</span>'}
@@ -156,7 +156,7 @@ function addToCart(id) {
   if (!p) return;
   const existing = cart.find(x => x.id === id);
   if (existing) existing.qty++;
-  else cart.push({ id: p.id, name: p.name, price: Number(p.price), qty: 1 });
+  else cart.push({ id: p.id, name: p.name, price: Number(p.price), size: p.size || '', qty: 1 });
   renderCart();
   toast(p.name);
 }
@@ -184,7 +184,7 @@ function renderCart() {
   $('cart-empty').style.display = 'none';
   $('cart-list').innerHTML = cart.map((item, idx) =>
     `<div class="cart-item">
-      <div class="ci-name">${escHtml(item.name)}</div>
+      <div class="ci-name">${item.size ? escHtml(item.name) + ' (' + escHtml(item.size) + ')' : escHtml(item.name)}</div>
       <div class="ci-qty">
         <button onclick="changeQty(${idx}, -1)">−</button>
         <span>${item.qty}</span>
@@ -218,7 +218,7 @@ async function confirmPrice() {
 function checkout() {
   if (!cart.length) return;
   const total = cart.reduce((s, i) => s + i.price * i.qty, 0);
-  const itemsHtml = cart.map(i => `${i.qty}x ${escHtml(i.name)} — $${(i.price*i.qty).toFixed(2)}`).join('<br>');
+  const itemsHtml = cart.map(i => `${i.qty}x ${i.size ? escHtml(i.name) + ' (' + escHtml(i.size) + ')' : escHtml(i.name)} — $${(i.price*i.qty).toFixed(2)}`).join('<br>');
 
   openModal(`
     <h2>Cobrar</h2>
@@ -279,7 +279,7 @@ function generatePDF(sale) {
   sep();
   l('Producto', 'Total', 8);
   sep();
-  sale.items.forEach(i => l(i.qty + 'x ' + i.name, '$' + (i.price*i.qty).toFixed(2), 8));
+  sale.items.forEach(i => l(i.qty + 'x ' + i.name + (i.size ? ' (' + i.size + ')' : ''), '$' + (i.price*i.qty).toFixed(2), 8));
   sep();
   l('TOTAL', '$' + sale.total.toFixed(2), 11);
   y += 4; sep();
@@ -339,7 +339,7 @@ function viewSale(sid) {
       <div style="text-align:center;font-size:11px;color:var(--text-dim);margin-bottom:10px">${ds}</div>
       ${s.items.map(i => `
         <div style="display:flex;justify-content:space-between;font-size:13px;padding:2px 0">
-          <span>${i.qty}x ${escHtml(i.name)}</span>
+          <span>${i.qty}x ${i.size ? escHtml(i.name) + ' (' + escHtml(i.size) + ')' : escHtml(i.name)}</span>
           <span style="font-weight:600">$${(i.price*i.qty).toFixed(2)}</span>
         </div>
       `).join('')}
@@ -365,7 +365,7 @@ function showProducts() {
     ${list.map(p => `
       <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border);cursor:pointer" onclick="editProduct('${p.id}')">
         <div>
-          <div style="font-size:13px;font-weight:500">${escHtml(p.name)}</div>
+          <div style="font-size:13px;font-weight:500">${fmtName(p)}</div>
           <div style="font-size:10px;color:var(--text-dim)">${escHtml(p.business||'general')}</div>
         </div>
         <div style="display:flex;align-items:center;gap:8px">
@@ -390,6 +390,10 @@ function addNewProduct() {
       <label style="font-size:12px;color:var(--text-muted);display:block;margin-bottom:4px">Precio ($)</label>
       <input id="ep-price" type="number" step="0.01" min="0" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:6px;background:var(--card);color:var(--text);font-size:14px;outline:none;font-family:inherit">
     </div>
+    <div style="margin-bottom:10px">
+      <label style="font-size:12px;color:var(--text-muted);display:block;margin-bottom:4px">Presentaci&oacute;n</label>
+      <input id="ep-size" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:6px;background:var(--card);color:var(--text);font-size:14px;outline:none;font-family:inherit" placeholder="Ej: 1kg, 600ml, 500g, 2L">
+    </div>
     <div style="margin-bottom:14px">
       <label style="font-size:12px;color:var(--text-muted);display:block;margin-bottom:4px">Categor&iacute;a</label>
       <input id="ep-biz" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:6px;background:var(--card);color:var(--text);font-size:14px;outline:none;font-family:inherit" placeholder="general">
@@ -405,13 +409,14 @@ function addNewProduct() {
 async function saveNewProduct() {
   const name = $('ep-name')?.value.trim();
   const price = parseFloat($('ep-price')?.value);
+  const size = $('ep-size')?.value.trim() || '';
   const biz = $('ep-biz')?.value.trim() || 'general';
   if (!name) { toast('Nombre requerido'); return; }
   if (isNaN(price) || price <= 0) { toast('Precio inválido'); return; }
   const db = getDB();
   try {
     await db.collection('products').add({
-      name, price, business: biz, size: '',
+      name, price, size, business: biz,
       createdAt: firebase.firestore.FieldValue.serverTimestamp(),
       updatedAt: firebase.firestore.FieldValue.serverTimestamp()
     });
@@ -435,6 +440,10 @@ function editProduct(id) {
       <label style="font-size:12px;color:var(--text-muted);display:block;margin-bottom:4px">Precio ($)</label>
       <input id="ep-price" type="number" step="0.01" min="0" value="${p.price}" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:6px;background:var(--card);color:var(--text);font-size:14px;outline:none;font-family:inherit">
     </div>
+    <div style="margin-bottom:10px">
+      <label style="font-size:12px;color:var(--text-muted);display:block;margin-bottom:4px">Presentaci&oacute;n</label>
+      <input id="ep-size" value="${escHtml(p.size||'')}" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:6px;background:var(--card);color:var(--text);font-size:14px;outline:none;font-family:inherit" placeholder="Ej: 1kg, 600ml, 500g, 2L">
+    </div>
     <div style="margin-bottom:14px">
       <label style="font-size:12px;color:var(--text-muted);display:block;margin-bottom:4px">Categor&iacute;a</label>
       <input id="ep-biz" value="${escHtml(p.business||'')}" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:6px;background:var(--card);color:var(--text);font-size:14px;outline:none;font-family:inherit">
@@ -450,13 +459,14 @@ function editProduct(id) {
 async function saveEditProduct(id) {
   const name = $('ep-name')?.value.trim();
   const price = parseFloat($('ep-price')?.value);
+  const size = $('ep-size')?.value.trim() || '';
   const biz = $('ep-biz')?.value.trim() || 'general';
   if (!name) { toast('Nombre requerido'); return; }
   if (isNaN(price) || price <= 0) { toast('Precio inválido'); return; }
   const db = getDB();
   try {
     await db.collection('products').doc(id).update({
-      name, price, business: biz,
+      name, price, size, business: biz,
       updatedAt: firebase.firestore.FieldValue.serverTimestamp()
     });
     toast('Producto actualizado');
@@ -521,6 +531,11 @@ function escHtml(str) {
   const d = document.createElement('div');
   d.textContent = str;
   return d.innerHTML;
+}
+
+function fmtName(p) {
+  const s = p.size ? ` (${escHtml(p.size)})` : '';
+  return escHtml(p.name) + s;
 }
 
 document.addEventListener('DOMContentLoaded', initApp);

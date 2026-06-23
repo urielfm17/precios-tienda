@@ -1,12 +1,12 @@
 {
-  "name": "Precios Tienda",
-  "short_name": "Precios",
-  "description": "App para gestionar precios de productos de tu tienda",
+  "name": "Mi Punto de Venta",
+  "short_name": "Mi POS",
+  "description": "Punto de venta simple con base de datos en la nube",
   "start_url": "/precios-tienda/",
   "scope": "/precios-tienda/",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#2563eb",
+  "background_color": "#0f0f1a",
+  "theme_color": "#0f0f1a",
   "orientation": "portrait",
   "icons": [
     {

@@ -1,5 +1,4 @@
-const CACHE_NAME = 'precios-tienda-v4';
-
+const CACHE_NAME = 'pos-tienda-v1';
 const BASE = '/precios-tienda';
 
 const STATIC_ASSETS = [
@@ -8,58 +7,55 @@ const STATIC_ASSETS = [
   BASE + '/styles.css',
   BASE + '/app.js',
   BASE + '/firebase-config.js',
-  BASE + '/manifest.json'
+  BASE + '/manifest.json',
+  BASE + '/icons/icon-192.png',
+  BASE + '/icons/icon-512.png',
 ];
 
-self.addEventListener('install', (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(STATIC_ASSETS);
-    })
-  );
+const CDN_CACHE = 'pos-cdn-v1';
+const CDN_URLS = [
+  'https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js',
+  'https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js',
+];
+
+self.addEventListener('install', e => {
+  e.waitUntil((async () => {
+    const cache = await caches.open(CACHE_NAME);
+    await cache.addAll(STATIC_ASSETS);
+  })());
   self.skipWaiting();
 });
 
-self.addEventListener('activate', (event) => {
-  event.waitUntil(
-    caches.keys().then((keys) => {
-      return Promise.all(
-        keys
-          .filter((key) => key !== CACHE_NAME)
-          .map((key) => caches.delete(key))
-      );
-    })
-  );
+self.addEventListener('activate', e => {
+  e.waitUntil((async () => {
+    const keys = await caches.keys();
+    await Promise.all(keys.filter(k => k !== CACHE_NAME && k !== CDN_CACHE).map(k => caches.delete(k)));
+  })());
   self.clients.claim();
 });
 
-self.addEventListener('fetch', (event) => {
-  if (event.request.url.includes('firebase') || event.request.url.includes('googleapis')) {
-    event.respondWith(fetch(event.request).catch(() => {
-      return new Response(
-        JSON.stringify({ error: 'Sin conexión' }),
-        { status: 503, headers: { 'Content-Type': 'application/json' } }
-      );
-    }));
+self.addEventListener('fetch', e => {
+  const url = e.request.url;
+
+  // Firebase CDN: cache on first fetch, serve from cache on subsequent
+  if (url.includes('gstatic.com') && url.includes('firebase')) {
+    e.respondWith((async () => {
+      const cache = await caches.open(CDN_CACHE);
+      const cached = await cache.match(e.request);
+      if (cached) return cached;
+      try {
+        const res = await fetch(e.request);
+        if (res.ok) cache.put(e.request, res.clone());
+        return res;
+      } catch {
+        return cached || new Response('', { status: 503 });
+      }
+    })());
     return;
   }
 
-  event.respondWith(
-    caches.match(event.request).then((cachedResponse) => {
-      if (cachedResponse) return cachedResponse;
-      return fetch(event.request).then((response) => {
-        if (!response || response.status !== 200 || response.type !== 'basic') return response;
-        const cloned = response.clone();
-        caches.open(CACHE_NAME).then((cache) => {
-          cache.put(event.request, cloned);
-        });
-        return response;
-      }).catch(() => {
-        return new Response(
-          JSON.stringify({ error: 'Sin conexión' }),
-          { status: 503, headers: { 'Content-Type': 'application/json' } }
-        );
-      });
-    })
+  // App assets: cache-first
+  e.respondWith(
+    caches.match(e.request).then(cached => cached || fetch(e.request))
   );
 });

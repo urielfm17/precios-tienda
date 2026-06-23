@@ -382,9 +382,10 @@ function showProducts() {
 function addNewProduct() {
   openModal(`
     <h2>Nuevo Producto</h2>
-    <div style="margin-bottom:10px">
+    <div style="margin-bottom:10px;position:relative">
       <label style="font-size:12px;color:var(--text-muted);display:block;margin-bottom:4px">Nombre</label>
-      <input id="ep-name" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:6px;background:var(--card);color:var(--text);font-size:14px;outline:none;font-family:inherit">
+      <input id="ep-name" style="width:100%;padding:10px;border:1px solid var(--border);border-radius:6px;background:var(--card);color:var(--text);font-size:14px;outline:none;font-family:inherit" autocomplete="off">
+      <div id="ep-suggest" style="display:none;position:absolute;left:0;right:0;z-index:10;background:var(--card);border:1px solid var(--border);border-radius:6px;max-height:160px;overflow-y:auto;box-shadow:0 4px 20px rgba(0,0,0,.5)"></div>
     </div>
     <div style="margin-bottom:10px">
       <label style="font-size:12px;color:var(--text-muted);display:block;margin-bottom:4px">Precio ($)</label>
@@ -403,7 +404,68 @@ function addNewProduct() {
       <button class="modal-btn modal-primary" onclick="saveNewProduct()" style="flex:1">Guardar</button>
     </div>
   `);
-  setTimeout(() => $('ep-name')?.focus(), 100);
+  setTimeout(() => {
+    const inp = $('ep-name');
+    if (inp) inp.focus();
+    bindProductSuggestions();
+  }, 100);
+}
+
+function bindProductSuggestions() {
+  const inp = $('ep-name');
+  const sug = $('ep-suggest');
+  if (!inp || !sug) return;
+  let selIdx = -1;
+
+  inp.addEventListener('input', () => {
+    const q = normalize(inp.value.trim());
+    if (!q || q.length < 1) { sug.style.display = 'none'; selIdx = -1; return; }
+    const match = products
+      .filter(p => normalize(p.name).includes(q))
+      .slice(0, 6);
+    if (!match.length) { sug.style.display = 'none'; selIdx = -1; return; }
+    sug.innerHTML = match.map((p, i) =>
+      `<div style="padding:8px 12px;cursor:pointer;border-bottom:1px solid var(--border);font-size:13px;display:flex;justify-content:space-between" data-idx="${i}">
+        <span><strong>${escHtml(p.name)}</strong> ${p.size ? '<span style="color:var(--text-dim)">(' + escHtml(p.size) + ')</span>' : ''}</span>
+        <span style="color:var(--primary-light);font-weight:600">$${Number(p.price).toFixed(2)}</span>
+      </div>`
+    ).join('');
+    sug.style.display = 'block';
+    selIdx = -1;
+
+    sug.querySelectorAll('div[data-idx]').forEach(el => {
+      el.addEventListener('click', () => {
+        const p = match[parseInt(el.dataset.idx)];
+        if (p) {
+          inp.value = p.name;
+          $('ep-price').value = p.price;
+          $('ep-size').value = p.size || '';
+          $('ep-biz').value = p.business || '';
+        }
+        sug.style.display = 'none';
+      });
+      el.addEventListener('mouseenter', function() {
+        sug.querySelectorAll('div[data-idx]').forEach(e => e.style.background = '');
+        this.style.background = 'var(--surface)';
+      });
+    });
+  });
+
+  inp.addEventListener('keydown', e => {
+    const items = sug.querySelectorAll('div[data-idx]');
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      if (!items.length) return;
+      selIdx = e.key === 'ArrowDown' ? Math.min(selIdx + 1, items.length - 1) : Math.max(selIdx - 1, -1);
+      items.forEach((el, i) => el.style.background = i === selIdx ? 'var(--surface)' : '');
+    }
+    if (e.key === 'Enter' && selIdx >= 0 && items[selIdx]) {
+      e.preventDefault();
+      items[selIdx].click();
+    }
+  });
+
+  inp.addEventListener('blur', () => setTimeout(() => sug.style.display = 'none', 200));
 }
 
 async function saveNewProduct() {

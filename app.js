@@ -71,7 +71,8 @@ function bindUI() {
   let selIdx = -1;
 
   inp.addEventListener('input', () => {
-    const q = inp.value.trim().toLowerCase();
+    const raw = inp.value.trim();
+    const q = normalize(raw);
     if (!q) { sug.classList.remove('show'); selIdx = -1; return; }
     let list = products.filter(p => normalize(p.name).includes(q)).slice(0, 8);
     const exact = list.some(p => normalize(p.name) === q);
